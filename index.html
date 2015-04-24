@@ -108,14 +108,14 @@ function draw(ctx, image, x, y, layers) {
     transformedCtx.globalAlpha = 1;
 
     transformedCtx.fillStyle = imagePattern;
-    transformedCtx.translate(timestamp, 0);
+    transformedCtx.translate(timestamp % (length * 2), 0);
     transformedCtx.fill();
 
     transformedCtx.globalAlpha = 0.5;
 
     layersPatterns.forEach(function (pattern) {
       transformedCtx.fillStyle = pattern;
-      transformedCtx.translate(timestamp * 1.5, 0);
+      transformedCtx.translate((timestamp * 1.5) % (length * 2), 0);
       transformedCtx.fill();
     });
 
