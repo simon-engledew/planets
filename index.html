@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html {
+  background: #000;
+}
+canvas {
+  border: solid 1px green;
+}
+</style>
+<script>
+HTMLDocument.prototype.createCanvas = function createCanvas(width, height) {
+  var buffer = this.createElement('canvas');
+  buffer.width = width;
+  buffer.height = height;
+  return buffer;
+}
+
+Image.prototype.resize = function resize(width, height) {
+  var buffer = document.createCanvas(width, height);
+  var ctx = buffer.getContext('2d');
+  ctx.drawImage(this, 0, 0, width, height);
+  return buffer;
+}
+
+Image.prototype.ready = function ready() {
+  var image = this;
+  return new Promise(function(resolve, reject) {
+    if (self.complete) {
+      resolve(image);
+    } else {
+      image.addEventListener('load', function(e) { resolve(image); }, false);
+      image.addEventListener('error', reject, false);
+    }
+  });
+}
+
+Image.fromSrc = function fromSrc(src) {
+  var image = new Image();
+  image.src = src;
+  return image;
+}
+</script>
+</head>
+<body>
+<canvas id="earth" height="400" width="200"></canvas>
+<canvas id="jupiter" height="400" width="200"></canvas>
+<canvas id="blueprint" height="400" width="200"></canvas>
+<script>
+function drawCircle(ctx, image, x, y, resolution) {
+  var center = (x - image.width / 2);
+  var length = Math.min(image.width, image.height);
+
+  for (i = resolution; i <= length / 2.0; i += resolution)
+  {
+    warp = 2.0 * Math.sqrt(Math.pow(length / 2.0, 2) - Math.pow(i, 2));
+
+    ctx.drawImage(image, 0, length / 2.0 - resolution + i, length, resolution, center + (length - warp) / 2.0, y - resolution + i, warp, resolution);
+    ctx.drawImage(image, 0, length / 2.0 - i, length, resolution, center + (length - warp) / 2.0, y - i, warp, resolution);
+  }
+}
+
+function draw(ctx, image) {
+  var previous;
+  var aspect = Math.min(ctx.canvas.width, ctx.canvas.height);
+  var ratio = Math.max(aspect / image.width, aspect / image.height);
+  var resized = image.resize(image.width * ratio, image.height * ratio);
+  var length = Math.min(resized.width, resized.height);
+
+  var resizedCtx = resized.getContext('2d');
+  resizedCtx.rect(0, 50, 10, 10);
+  resizedCtx.strokeStyle = 'red';
+  resizedCtx.stroke();
+
+  var transformed = document.createCanvas(ctx.canvas.width, ctx.canvas.height);
+  var transformedCtx = transformed.getContext('2d');
+
+  transformedCtx.fillStyle = transformedCtx.createPattern(resized, 'repeat');
+  transformedCtx.rect(0, 0, length, length);
+
+  var gradient = document.createCanvas(ctx.canvas.width, ctx.canvas.height);
+  var gradientCtx = gradient.getContext('2d');
+
+  var x = ctx.canvas.width / 2;
+  // var y = ctx.canvas.height / 2;
+  var y = ctx.canvas.height - (length / 2);
+
+  gradientCtx.beginPath();
+  gradientCtx.arc(x, y, (gradient.width / 2) + 1, 0, 2 * Math.PI);
+  gradientCtx.fillStyle = gradientCtx.createRadialGradient(x, y, 0, x, y, (gradient.width / 2) + 1);
+  gradientCtx.fillStyle.addColorStop(0, 'rgba(0, 0, 0, 0)');
+  gradientCtx.fillStyle.addColorStop(0.5, 'rgba(0, 0, 0, 0.25)');
+  gradientCtx.fillStyle.addColorStop(0.95, 'rgba(0, 0, 0, 0.5)');
+  gradientCtx.fillStyle.addColorStop(1, 'rgba(0, 0, 0, 1)');
+  gradientCtx.fill();
+
+  (function animate(timestamp) {
+    timestamp = Math.round(timestamp / 50)
+    if (timestamp == previous) {
+      return window.requestAnimationFrame(animate);
+    }
+    step = previous ? timestamp - previous : 0;
+    previous = timestamp;
+
+    transformedCtx.translate(step % (length * 2), 0);
+    transformedCtx.fill();
+
+    ctx.drawImage(transformed, 0, 0);
+    drawCircle(ctx, transformed, x, y, 1);
+    ctx.drawImage(gradient, 0, 0);
+
+    window.requestAnimationFrame(animate);
+  })();
+};
+
+function planet(canvas, src) {
+  Image.fromSrc(src).ready().then(function(image) {
+    draw(canvas.getContext('2d'), image);
+  });
+}
+
+(function () {
+  window.onload = function () {
+    planet(document.getElementById('earth'), 'earth.png');
+    planet(document.getElementById('blueprint'), 'blueprint.jpg');
+    planet(document.getElementById('jupiter'), 'jupiter.jpg');
+  };
+})();
+</script>
+</body>
+</html>
