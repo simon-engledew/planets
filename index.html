@@ -105,10 +105,13 @@ function draw(ctx, image, x, y, layers) {
     timestamp /= 50;
 
     transformedCtx.setTransform(1, 0, 0, 1, 0, 0);
+    transformedCtx.globalAlpha = 1;
 
     transformedCtx.fillStyle = imagePattern;
     transformedCtx.translate(timestamp, 0);
     transformedCtx.fill();
+
+    transformedCtx.globalAlpha = 0.5;
 
     layersPatterns.forEach(function (pattern) {
       transformedCtx.fillStyle = pattern;
